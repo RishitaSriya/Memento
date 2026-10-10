@@ -100,3 +100,29 @@ export const INITIAL_ALBUMS = [
     updatedAt: '2026-03-05T08:30:00.000Z',
   },
 ];
+
+export const INITIAL_CAPSULES = [
+  {
+    _id: 'sample-capsule-1',
+    title: 'Letter to My Future Self — One Year From Now',
+    message: 'Remember the excitement of creating Memento! Keep pursuing passions, cherishing everyday adventures, and appreciating the people around you.',
+    photos: ['sample-photo-1', 'sample-photo-2'],
+    unlockDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    isLocked: true,
+    isDemo: true,
+    createdAt: '2026-03-01T12:00:00.000Z',
+    updatedAt: '2026-03-01T12:00:00.000Z',
+  },
+  {
+    _id: 'sample-capsule-2',
+    title: 'A Memory from the Old Quarter',
+    message: 'We sat at this little corner bistro until midnight discussing dreams and adventures. Opening this now reminds us of where we started.',
+    photos: ['sample-photo-3'],
+    unlockDate: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+    isLocked: false,
+    isDemo: true,
+    createdAt: '2026-02-15T09:30:00.000Z',
+    updatedAt: '2026-02-15T09:30:00.000Z',
+  },
+];
+

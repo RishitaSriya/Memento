@@ -1,6 +1,8 @@
 const Photo = require('../models/Photo');
 const Album = require('../models/Album');
 const { calculateChecksum, safeDeleteFile } = require('../utils/fileUtils');
+const { analyzeImage } = require('../services/imageAnalysisService');
+const { parseNaturalQuery, scorePhoto } = require('../services/nlpSearchService');
 const path = require('path');
 const fs = require('fs');
 
@@ -59,6 +61,19 @@ exports.uploadPhotos = async (req, res) => {
         if (isNaN(captureDate.getTime())) captureDate = null;
       }
 
+      // Run image analysis pipeline
+      let aiAnalysis = { aiTags: [], aiDescription: '', dominantColors: [], blurScore: 0 };
+      try {
+        aiAnalysis = await analyzeImage(file.path, file.originalname);
+      } catch (e) {}
+
+      const userTags = req.body.tags
+        ? req.body.tags
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
+
       const photo = new Photo({
         originalName: file.originalname,
         storageName: file.filename,
@@ -68,14 +83,14 @@ exports.uploadPhotos = async (req, res) => {
         width,
         height,
         checksum,
-        description: req.body.description || '',
-        tags: req.body.tags
-          ? req.body.tags
-              .split(',')
-              .map((t) => t.trim())
-              .filter(Boolean)
-          : [],
+        description: req.body.description || aiAnalysis.aiDescription || '',
+        tags: userTags,
+        aiTags: aiAnalysis.aiTags || [],
+        aiDescription: aiAnalysis.aiDescription || '',
+        dominantColors: aiAnalysis.dominantColors || [],
+        blurScore: aiAnalysis.blurScore || 0,
         captureDate,
+        isDemo: false,
       });
 
       await photo.save();
@@ -432,3 +447,100 @@ exports.getTimeline = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// ─── Ask Memento: Natural Language & AI Photo Search ─────────────────────────
+
+exports.aiSearchPhotos = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || !q.trim()) {
+      return res.status(400).json({ success: false, message: 'Search query is required.' });
+    }
+
+    const parsedQuery = parseNaturalQuery(q);
+    const photos = await Photo.find().populate('albums', 'name');
+
+    const scored = photos
+      .map((photo) => {
+        const { score, matchReasons } = scorePhoto(photo, parsedQuery);
+        return {
+          photo,
+          score,
+          matchReasons,
+        };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    res.json({
+      success: true,
+      query: q,
+      parsedQuery,
+      totalMatches: scored.length,
+      results: scored.map((item) => ({
+        ...item.photo.toObject(),
+        relevanceScore: item.score,
+        matchReasons: item.matchReasons,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── Trigger AI Analysis for a Photo ──────────────────────────────────────────
+
+exports.analyzePhoto = async (req, res) => {
+  try {
+    const photo = await Photo.findById(req.params.id);
+    if (!photo) {
+      return res.status(404).json({ success: false, message: 'Photo not found.' });
+    }
+
+    const analysis = await analyzeImage(photo.filePath, photo.originalName);
+    photo.aiTags = analysis.aiTags || [];
+    photo.aiDescription = analysis.aiDescription || '';
+    photo.dominantColors = analysis.dominantColors || [];
+    photo.blurScore = analysis.blurScore || 0;
+
+    await photo.save();
+
+    res.json({
+      success: true,
+      photo,
+      analysis,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─── Batch Analyze All Photos ─────────────────────────────────────────────────
+
+exports.analyzeAllPhotos = async (req, res) => {
+  try {
+    const photos = await Photo.find();
+    let analyzedCount = 0;
+
+    for (const photo of photos) {
+      try {
+        const analysis = await analyzeImage(photo.filePath, photo.originalName);
+        photo.aiTags = analysis.aiTags || [];
+        photo.aiDescription = analysis.aiDescription || '';
+        photo.dominantColors = analysis.dominantColors || [];
+        photo.blurScore = analysis.blurScore || 0;
+        await photo.save();
+        analyzedCount++;
+      } catch (e) {}
+    }
+
+    res.json({
+      success: true,
+      totalPhotos: photos.length,
+      analyzedCount,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+

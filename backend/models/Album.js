@@ -23,6 +23,11 @@ const albumSchema = new mongoose.Schema(
         ref: 'Photo',
       },
     ],
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
   },
   {
     timestamps: true,

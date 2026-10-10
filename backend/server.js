@@ -7,6 +7,10 @@ const fs = require('fs');
 
 const photoRoutes = require('./routes/photoRoutes');
 const albumRoutes = require('./routes/albumRoutes');
+const capsuleRoutes = require('./routes/capsuleRoutes');
+const memoryRoutes = require('./routes/memoryRoutes');
+const detectiveRoutes = require('./routes/detectiveRoutes');
+const demoRoutes = require('./routes/demoRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,9 +45,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Guard: Fast 503 response if MongoDB is not connected (prevents 10s buffering timeouts)
+app.use('/api', (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'MongoDB is currently disconnected. Please start mongod or configure MONGO_URI in backend/.env.',
+      mongoStatus: 'disconnected',
+    });
+  }
+  next();
+});
+
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use('/api/photos', photoRoutes);
 app.use('/api/albums', albumRoutes);
+app.use('/api/capsules', capsuleRoutes);
+app.use('/api/memories', memoryRoutes);
+app.use('/api/detective', detectiveRoutes);
+app.use('/api/demo', demoRoutes);
 
 // ─── 404 Handler ─────────────────────────────────────────────────────────────
 app.use((req, res) => {

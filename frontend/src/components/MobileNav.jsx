@@ -1,14 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Images, BookOpen, Heart, Clock, Upload } from 'lucide-react';
+import { LayoutDashboard, Images, RotateCcw, Lock, Film, Upload } from 'lucide-react';
 import { useApp } from '../hooks/useApp';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Home' },
   { to: '/photos', icon: Images, label: 'Photos' },
-  { to: '/albums', icon: BookOpen, label: 'Albums' },
-  { to: '/favorites', icon: Heart, label: 'Favorites' },
-  { to: '/memories', icon: Clock, label: 'Memories' },
+  { to: '/rewind', icon: RotateCcw, label: 'Rewind' },
+  { to: '/capsules', icon: Lock, label: 'Capsules' },
+  { to: '/cinema', icon: Film, label: 'Cinema' },
 ];
 
 export default function MobileNav() {
@@ -36,14 +36,14 @@ export default function MobileNav() {
             to={to}
             end={to === '/'}
             className={({ isActive }) =>
-              `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
+              `flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
                 isActive ? 'text-accent' : 'text-muted'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={20} className={isActive ? 'text-accent' : 'text-muted'} />
+                <Icon size={18} className={isActive ? 'text-accent' : 'text-muted'} />
                 <span className="text-[10px]">{label}</span>
               </>
             )}

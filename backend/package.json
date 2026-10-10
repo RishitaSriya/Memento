@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "import-demo": "node scripts/importDemoPhotos.js",
+    "reset-demo": "node scripts/resetDemoPhotos.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

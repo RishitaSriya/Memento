@@ -30,7 +30,6 @@ function samplePhotosPlugin() {
     configureServer(server) {
       sync();
 
-      // Watch the sample photos folder for new additions
       try {
         server.watcher.add(sampleDir);
         server.watcher.on('add', (filePath) => {
@@ -40,7 +39,7 @@ function samplePhotosPlugin() {
         });
       } catch (e) {}
 
-      // Endpoint to list all files in sample-photos
+      // Internal endpoint to list all files in sample-photos
       server.middlewares.use('/api/sample-photos-list', (req, res) => {
         sync();
         try {
@@ -62,5 +61,21 @@ export default defineConfig({
   plugins: [react(), samplePhotosPlugin()],
   server: {
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        // Bypass proxy for sample photos list handled by Vite plugin
+        bypass: (req) => {
+          if (req.url.startsWith('/api/sample-photos-list')) {
+            return req.url;
+          }
+        },
+      },
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
   },
 });

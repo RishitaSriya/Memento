@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { AppProvider, useApp } from './hooks/useApp';
 import { useToast } from './hooks/useToast';
 import { photoService } from './services/api';
@@ -14,28 +14,39 @@ import PhotosPage from './pages/PhotosPage';
 import AlbumsPage from './pages/AlbumsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MemoriesPage from './pages/MemoriesPage';
+import MemoryRewindPage from './pages/MemoryRewindPage';
+import CapsulesPage from './pages/CapsulesPage';
+import MemoryCinemaPage from './pages/MemoryCinemaPage';
+import PhotoDetectivePage from './pages/PhotoDetectivePage';
 
 function AppInner() {
   const { uploadModalOpen, setUploadModalOpen } = useApp();
   const { toasts, addToast, removeToast } = useToast();
   const [stats, setStats] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [cinemaPayload, setCinemaPayload] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     photoService.getStats()
-      .then(res => setStats(res.data.stats))
+      .then((res) => setStats(res.data.stats))
       .catch(() => {});
   }, [refreshKey]);
 
   const handleUploaded = (photos) => {
     addToast(`${photos.length} photo${photos.length > 1 ? 's' : ''} uploaded!`, 'success');
-    setRefreshKey(k => k + 1);
+    setRefreshKey((k) => k + 1);
   };
 
   const handleSyncSample = async () => {
     await photoService.syncSampleFolder();
     setRefreshKey((k) => k + 1);
     addToast('Sample photos folder synced!', 'success');
+  };
+
+  const handleLaunchCinema = (photos, title) => {
+    setCinemaPayload({ photos, title });
+    navigate('/cinema');
   };
 
   return (
@@ -54,6 +65,26 @@ function AppInner() {
           <Route path="/albums" element={<AlbumsPage addToast={addToast} />} />
           <Route path="/favorites" element={<FavoritesPage addToast={addToast} />} />
           <Route path="/memories" element={<MemoriesPage addToast={addToast} />} />
+          <Route
+            path="/rewind"
+            element={
+              <MemoryRewindPage addToast={addToast} onLaunchCinema={handleLaunchCinema} />
+            }
+          />
+          <Route path="/capsules" element={<CapsulesPage addToast={addToast} />} />
+          <Route
+            path="/cinema"
+            element={
+              <div className="p-4 md:p-6">
+                <MemoryCinemaPage
+                  initialPhotos={cinemaPayload?.photos || []}
+                  initialTitle={cinemaPayload?.title || ''}
+                  onClose={() => navigate(-1)}
+                />
+              </div>
+            }
+          />
+          <Route path="/detective" element={<PhotoDetectivePage addToast={addToast} />} />
         </Routes>
       </main>
 

@@ -46,6 +46,23 @@ const photoSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    aiTags: {
+      type: [String],
+      default: [],
+    },
+    aiDescription: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    dominantColors: {
+      type: [String],
+      default: [],
+    },
+    blurScore: {
+      type: Number,
+      default: 0,
+    },
     captureDate: {
       type: Date,
       default: null,
@@ -53,6 +70,11 @@ const photoSchema = new mongoose.Schema(
     isFavorite: {
       type: Boolean,
       default: false,
+    },
+    isDemo: {
+      type: Boolean,
+      default: false,
+      index: true,
     },
     albums: [
       {
@@ -66,7 +88,13 @@ const photoSchema = new mongoose.Schema(
   }
 );
 
-// Text search index
-photoSchema.index({ originalName: 'text', description: 'text', tags: 'text' });
+// Compound text search index including AI tags and AI descriptions
+photoSchema.index({
+  originalName: 'text',
+  description: 'text',
+  tags: 'text',
+  aiTags: 'text',
+  aiDescription: 'text',
+});
 
 module.exports = mongoose.model('Photo', photoSchema);
